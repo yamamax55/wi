@@ -1,0 +1,133 @@
+{
+  "ポーション": {
+    "type": "consumable",
+    "effect": "heal",
+    "power": "2d4+2",
+    "price": 50,
+    "weight": 1,
+    "description": "HPを回復する"
+  },
+  "ハイポーション": {
+    "type": "consumable",
+    "effect": "heal",
+    "power": "4d4+4",
+    "price": 200,
+    "weight": 1,
+    "description": "HPを大きく回復する"
+  },
+  "マナポーション": {
+    "type": "consumable",
+    "effect": "restore_mp",
+    "power": "2d4+2",
+    "price": 100,
+    "weight": 1,
+    "description": "MPを回復する"
+  },
+  "解毒剤": {
+    "type": "consumable",
+    "effect": "cure_poison",
+    "price": 30,
+    "weight": 1,
+    "description": "毒を治療する"
+  },
+  "万能薬": {
+    "type": "consumable",
+    "effect": "cure_all_status",
+    "price": 500,
+    "weight": 1,
+    "description": "全ての状態異常を治療する"
+  },
+  "蘇生の薬": {
+    "type": "consumable",
+    "effect": "resurrect",
+    "success_rate": 80,
+    "price": 1000,
+    "weight": 1,
+    "description": "死者を蘇生させる"
+  },
+  "パン": {
+    "type": "consumable",
+    "effect": "heal",
+    "power": "1d4+1",
+    "price": 5,
+    "weight": 1,
+    "description": "少しHPを回復する"
+  },
+  "チーズ": {
+    "type": "consumable",
+    "effect": "heal",
+    "power": "1d6+2",
+    "price": 10,
+    "weight": 1,
+    "description": "少しHPを回復する"
+  },
+  "肉": {
+    "type": "consumable",
+    "effect": "heal",
+    "power": "2d4+3",
+    "price": 20,
+    "weight": 2,
+    "description": "HPを回復する"
+  },
+  "エリクサー": {
+    "type": "consumable",
+    "effect": "full_restore",
+    "price": 10000,
+    "weight": 1,
+    "description": "HP・MPを完全回復し、状態異常も全て治療する"
+  },
+  "魔法の巻物": {
+    "type": "consumable",
+    "effect": "cast_spell",
+    "spell": "random",
+    "price": 300,
+    "weight": 1,
+    "description": "ランダムな魔法を発動する"
+  },
+  "帰還の巻物": {
+    "type": "consumable",
+    "effect": "teleport_town",
+    "price": 200,
+    "weight": 1,
+    "description": "街に帰還する"
+  },
+  "金貨": {
+    "type": "treasure",
+    "value": 100,
+    "weight": 1,
+    "price": 100,
+    "description": "価値のある金貨"
+  },
+  "宝石": {
+    "type": "treasure",
+    "value": 500,
+    "weight": 1,
+    "price": 500,
+    "description": "美しい宝石"
+  },
+  "ダイヤモンド": {
+    "type": "treasure",
+    "value": 2000,
+    "weight": 1,
+    "price": 2000,
+    "description": "極上のダイヤモンド"
+  },
+  "古い鍵": {
+    "type": "key",
+    "price": 0,
+    "weight": 1,
+    "description": "何かの扉を開けそうな古い鍵"
+  },
+  "銀の鍵": {
+    "type": "key",
+    "price": 0,
+    "weight": 1,
+    "description": "特別な扉を開ける銀の鍵"
+  },
+  "金の鍵": {
+    "type": "key",
+    "price": 0,
+    "weight": 1,
+    "description": "最も重要な扉を開ける金の鍵"
+  }
+}

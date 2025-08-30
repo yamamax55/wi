@@ -106,10 +106,12 @@ sub main_menu {
     print "\n=== メインメニュー ===\n";
     print "1. ダンジョン探索\n";
     print "2. ステータス確認\n";
-    print "3. セーブ\n";
-    print "4. ロード\n";
-    print "5. 設定\n";
-    print "6. ゲーム終了\n";
+    print "3. 装備管理\n";
+    print "4. アイテム管理\n";
+    print "5. セーブ\n";
+    print "6. ロード\n";
+    print "7. 設定\n";
+    print "8. ゲーム終了\n";
     print "選択 > ";
     
     chomp(my $choice = <STDIN>);
@@ -121,12 +123,16 @@ sub main_menu {
         print "\nEnterキーで戻る...";
         <STDIN>;
     } elsif ($choice eq '3') {
-        save_game_menu();
+        equipment_menu();
     } elsif ($choice eq '4') {
-        load_game_menu();
+        item_menu();
     } elsif ($choice eq '5') {
-        settings_menu();
+        save_game_menu();
     } elsif ($choice eq '6') {
+        load_game_menu();
+    } elsif ($choice eq '7') {
+        settings_menu();
+    } elsif ($choice eq '8') {
         $game_running = 0;
     } else {
         print "無効な選択です。\n";
@@ -359,6 +365,235 @@ $SIG{__DIE__} = sub {
     print "ゲームを安全に終了します。\n";
     exit 1;
 };
+
+sub equipment_menu {
+    while (1) {
+        print "\n=== 装備管理 ===\n";
+        print "キャラクターを選択してください:\n";
+        
+        for my $i (0..$#{$party}) {
+            my $char = $party->[$i];
+            print ($i + 1) . ". " . $char->{name} . " (" . $char->{class} . ")\n";
+        }
+        print "0. 戻る\n";
+        print "選択 > ";
+        
+        chomp(my $choice = <STDIN>);
+        
+        if ($choice eq '0') {
+            return;
+        } elsif ($choice > 0 && $choice <= @$party) {
+            character_equipment_menu($party->[$choice - 1]);
+        } else {
+            print "無効な選択です。\n";
+        }
+    }
+}
+
+sub character_equipment_menu {
+    my $char = shift;
+    
+    while (1) {
+        print "\n=== " . $char->{name} . " の装備管理 ===\n";
+        $char->{equipment_manager}->display_equipment();
+        
+        print "\n1. 装備する\n";
+        print "2. 装備を外す\n";
+        print "3. インベントリ表示\n";
+        print "0. 戻る\n";
+        print "選択 > ";
+        
+        chomp(my $choice = <STDIN>);
+        
+        if ($choice eq '0') {
+            return;
+        } elsif ($choice eq '1') {
+            equip_item_menu($char);
+        } elsif ($choice eq '2') {
+            unequip_item_menu($char);
+        } elsif ($choice eq '3') {
+            $char->display_inventory();
+            print "\nEnterキーで戻る...";
+            <STDIN>;
+        } else {
+            print "無効な選択です。\n";
+        }
+    }
+}
+
+sub equip_item_menu {
+    my $char = shift;
+    
+    $char->display_inventory();
+    
+    if (@{$char->{inventory}} == 0) {
+        print "装備できるアイテムがありません。\n";
+        print "\nEnterキーで戻る...";
+        <STDIN>;
+        return;
+    }
+    
+    print "\n装備するアイテムの番号を選択 (0=戻る): ";
+    chomp(my $choice = <STDIN>);
+    
+    if ($choice > 0 && $choice <= @{$char->{inventory}}) {
+        my $item = $char->{inventory}->[$choice - 1];
+        my $result = $char->equip_item($item->get_name());
+        print $result . "\n";
+        print "\nEnterキーで戻る...";
+        <STDIN>;
+    }
+}
+
+sub unequip_item_menu {
+    my $char = shift;
+    
+    print "\n外す装備を選択してください:\n";
+    print "1. 武器\n";
+    print "2. 鎧\n";
+    print "3. 盾\n";
+    print "4. 兜\n";
+    print "5. 装飾品\n";
+    print "0. 戻る\n";
+    print "選択 > ";
+    
+    chomp(my $choice = <STDIN>);
+    
+    my %slot_map = (
+        '1' => 'weapon',
+        '2' => 'armor',
+        '3' => 'shield',
+        '4' => 'helmet',
+        '5' => 'accessory'
+    );
+    
+    if ($choice eq '0') {
+        return;
+    } elsif (exists $slot_map{$choice}) {
+        my $result = $char->unequip_item($slot_map{$choice});
+        print $result . "\n";
+        print "\nEnterキーで戻る...";
+        <STDIN>;
+    } else {
+        print "無効な選択です。\n";
+    }
+}
+
+sub item_menu {
+    while (1) {
+        print "\n=== アイテム管理 ===\n";
+        print "キャラクターを選択してください:\n";
+        
+        for my $i (0..$#{$party}) {
+            my $char = $party->[$i];
+            print ($i + 1) . ". " . $char->{name} . " (" . $char->{class} . ")\n";
+        }
+        print "0. 戻る\n";
+        print "選択 > ";
+        
+        chomp(my $choice = <STDIN>);
+        
+        if ($choice eq '0') {
+            return;
+        } elsif ($choice > 0 && $choice <= @$party) {
+            character_item_menu($party->[$choice - 1]);
+        } else {
+            print "無効な選択です。\n";
+        }
+    }
+}
+
+sub character_item_menu {
+    my $char = shift;
+    
+    while (1) {
+        print "\n=== " . $char->{name} . " のアイテム管理 ===\n";
+        $char->display_inventory();
+        
+        print "\n1. アイテムを使用\n";
+        print "2. アイテム詳細表示\n";
+        print "0. 戻る\n";
+        print "選択 > ";
+        
+        chomp(my $choice = <STDIN>);
+        
+        if ($choice eq '0') {
+            return;
+        } elsif ($choice eq '1') {
+            use_item_menu($char);
+        } elsif ($choice eq '2') {
+            item_details_menu($char);
+        } else {
+            print "無効な選択です。\n";
+        }
+    }
+}
+
+sub use_item_menu {
+    my $char = shift;
+    
+    if (@{$char->{inventory}} == 0) {
+        print "使用できるアイテムがありません。\n";
+        print "\nEnterキーで戻る...";
+        <STDIN>;
+        return;
+    }
+    
+    print "\n使用するアイテムの番号を選択 (0=戻る): ";
+    chomp(my $choice = <STDIN>);
+    
+    if ($choice > 0 && $choice <= @{$char->{inventory}}) {
+        my $item = $char->{inventory}->[$choice - 1];
+        
+        if ($item->is_consumable()) {
+            my $result = $char->use_item($item->get_name());
+            print $result . "\n";
+        } else {
+            print "そのアイテムは使用できません。\n";
+        }
+        
+        print "\nEnterキーで戻る...";
+        <STDIN>;
+    }
+}
+
+sub item_details_menu {
+    my $char = shift;
+    
+    if (@{$char->{inventory}} == 0) {
+        print "アイテムがありません。\n";
+        print "\nEnterキーで戻る...";
+        <STDIN>;
+        return;
+    }
+    
+    print "\n詳細を表示するアイテムの番号を選択 (0=戻る): ";
+    chomp(my $choice = <STDIN>);
+    
+    if ($choice > 0 && $choice <= @{$char->{inventory}}) {
+        my $item = $char->{inventory}->[$choice - 1];
+        
+        print "\n=== " . $item->get_name() . " の詳細 ===\n";
+        print "種類: " . $item->get_type() . "\n";
+        print "価格: " . $item->get_price() . " ゴールド\n";
+        print "重量: " . $item->get_weight() . "\n";
+        print "説明: " . $item->get_description() . "\n";
+        
+        if ($item->is_weapon()) {
+            print "ダメージ: " . $item->get_damage() . "\n";
+            print "命中修正: " . $item->get_hit_bonus() . "\n";
+        } elsif ($item->is_armor()) {
+            print "AC修正: +" . $item->get_ac_bonus() . "\n";
+        }
+        
+        if (my $special = $item->get_special()) {
+            print "特殊効果: " . $special . "\n";
+        }
+        
+        print "\nEnterキーで戻る...";
+        <STDIN>;
+    }
+}
 
 # メイン実行
 if ($0 eq __FILE__) {

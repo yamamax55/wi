@@ -4,6 +4,9 @@ use strict;
 use warnings;
 use utf8;
 use JSON;
+use lib 'lib';
+use StatusEffect;
+use Item;
 
 sub new {
     my ($class, $name, $data) = @_;
@@ -18,7 +21,10 @@ sub new {
         gold => $data->{gold} || 5,
         special_attacks => $data->{special_attacks} || [],
         resistances => $data->{resistances} || [],
-        level => $data->{level} || 1
+        level => $data->{level} || 1,
+        status_effects => [],
+        drop_table => $data->{drop_table} || [],
+        status_attacks => $data->{status_attacks} || []
     };
     bless $self, $class;
     return $self;
@@ -55,7 +61,12 @@ sub create_default_monster_data {
             "gold" => 8,
             "level" => 1,
             "special_attacks" => [],
-            "resistances" => []
+            "resistances" => [],
+            "drop_table" => [
+                {"item" => "パン", "chance" => 30},
+                {"item" => "短剣", "chance" => 5}
+            ],
+            "status_attacks" => []
         },
         "オーク" => {
             "hp" => 15,
@@ -66,7 +77,13 @@ sub create_default_monster_data {
             "gold" => 15,
             "level" => 2,
             "special_attacks" => [],
-            "resistances" => []
+            "resistances" => [],
+            "drop_table" => [
+                {"item" => "ポーション", "chance" => 20},
+                {"item" => "革の鎧", "chance" => 10},
+                {"item" => "金貨", "chance" => 15}
+            ],
+            "status_attacks" => [{"type" => "poison", "chance" => 15}]
         },
         "スケルトン" => {
             "hp" => 12,
@@ -77,7 +94,12 @@ sub create_default_monster_data {
             "gold" => 10,
             "level" => 2,
             "special_attacks" => [],
-            "resistances" => ["睡眠", "毒"]
+            "resistances" => ["sleep", "poison"],
+            "drop_table" => [
+                {"item" => "骨", "chance" => 40},
+                {"item" => "マナポーション", "chance" => 10}
+            ],
+            "status_attacks" => []
         },
         "ワイト" => {
             "hp" => 25,
@@ -88,7 +110,13 @@ sub create_default_monster_data {
             "gold" => 25,
             "level" => 3,
             "special_attacks" => ["レベルドレイン"],
-            "resistances" => ["睡眠", "毒", "麻痺"]
+            "resistances" => ["sleep", "poison", "paralysis"],
+            "drop_table" => [
+                {"item" => "解毒剤", "chance" => 25},
+                {"item" => "宝石", "chance" => 15},
+                {"item" => "銀の鍵", "chance" => 5}
+            ],
+            "status_attacks" => [{"type" => "paralysis", "chance" => 20}]
         },
         "ミノタウロス" => {
             "hp" => 40,
@@ -99,7 +127,13 @@ sub create_default_monster_data {
             "gold" => 40,
             "level" => 4,
             "special_attacks" => ["突進"],
-            "resistances" => []
+            "resistances" => [],
+            "drop_table" => [
+                {"item" => "ハイポーション", "chance" => 30},
+                {"item" => "チェインメイル", "chance" => 12},
+                {"item" => "力の指輪", "chance" => 8}
+            ],
+            "status_attacks" => []
         },
         "ドラゴン" => {
             "hp" => 80,
@@ -110,7 +144,14 @@ sub create_default_monster_data {
             "gold" => 100,
             "level" => 8,
             "special_attacks" => ["ブレス攻撃"],
-            "resistances" => ["火"]
+            "resistances" => ["fire"],
+            "drop_table" => [
+                {"item" => "ダイヤモンド", "chance" => 15},
+                {"item" => "フレイムソード", "chance" => 8},
+                {"item" => "ドラゴンスケイル", "chance" => 12},
+                {"item" => "エリクサー", "chance" => 3}
+            ],
+            "status_attacks" => [{"type" => "sleep", "chance" => 25}]
         }
     };
     
@@ -165,6 +206,10 @@ sub attack {
         print $self->{name} . " の攻撃！ " . $target->{name} . " に " . $damage . " のダメージ！\n";
         
         my $is_dead = $target->take_damage($damage);
+        
+        # 状態異常攻撃の試行
+        $self->try_status_attack($target) unless $is_dead;
+        
         return ($damage, $is_dead);
     } else {
         print $self->{name} . " の攻撃は外れた！\n";
@@ -207,6 +252,17 @@ sub take_damage {
     my ($self, $damage) = @_;
     $self->{hp} -= $damage;
     $self->{hp} = 0 if $self->{hp} < 0;
+    
+    # 睡眠状態の場合はダメージで起きる
+    if ($self->has_status('sleep')) {
+        for my $effect (@{$self->{status_effects}}) {
+            if ($effect->{type} eq 'sleep' && $effect->should_wake_on_damage()) {
+                $self->remove_status_effect('sleep');
+                last;
+            }
+        }
+    }
+    
     return $self->{hp} <= 0;
 }
 
@@ -219,6 +275,113 @@ sub get_treasure {
     my $self = shift;
     my $gold = $self->{gold} + int(rand($self->{gold}));
     return { gold => $gold, exp => $self->{exp} };
+}
+
+sub apply_status_effect {
+    my ($self, $effect_type, $duration) = @_;
+    
+    return 0 unless StatusEffect->is_valid_type($effect_type);
+    
+    # 耐性チェック
+    for my $resistance (@{$self->{resistances}}) {
+        return 0 if $resistance eq $effect_type;
+    }
+    
+    # 既に同じ状態異常がある場合は持続時間を更新
+    for my $effect (@{$self->{status_effects}}) {
+        if ($effect->{type} eq $effect_type) {
+            $effect->reset_duration($duration);
+            return 1;
+        }
+    }
+    
+    # 新しい状態異常を追加
+    my $effect = StatusEffect->new($effect_type, $duration);
+    push @{$self->{status_effects}}, $effect if $effect;
+    
+    return 1;
+}
+
+sub remove_status_effect {
+    my ($self, $effect_type) = @_;
+    @{$self->{status_effects}} = grep { $_->{type} ne $effect_type } @{$self->{status_effects}};
+}
+
+sub has_status {
+    my ($self, $effect_type) = @_;
+    
+    for my $effect (@{$self->{status_effects}}) {
+        return 1 if $effect->{type} eq $effect_type;
+    }
+    
+    return 0;
+}
+
+sub can_act {
+    my $self = shift;
+    
+    return 0 unless $self->is_alive();
+    
+    for my $effect (@{$self->{status_effects}}) {
+        return 0 unless $effect->can_act();
+    }
+    
+    return 1;
+}
+
+sub process_status_effects {
+    my $self = shift;
+    my @messages = ();
+    
+    my @active_effects = @{$self->{status_effects}};
+    $self->{status_effects} = [];
+    
+    for my $effect (@active_effects) {
+        # ダメージ効果の処理
+        my $message = $effect->apply_effect($self);
+        push @messages, $message if $message;
+        
+        # 持続時間の減少
+        unless ($effect->tick()) {
+            push @{$self->{status_effects}}, $effect;
+        }
+    }
+    
+    return @messages;
+}
+
+sub get_drops {
+    my $self = shift;
+    my @drops = ();
+    
+    for my $drop_entry (@{$self->{drop_table}}) {
+        my $chance = $drop_entry->{chance} || 0;
+        if (int(rand(100)) + 1 <= $chance) {
+            my $item = Item->new($drop_entry->{item});
+            push @drops, $item if $item;
+        }
+    }
+    
+    return @drops;
+}
+
+sub try_status_attack {
+    my ($self, $target) = @_;
+    
+    return 0 unless @{$self->{status_attacks}};
+    
+    for my $attack (@{$self->{status_attacks}}) {
+        my $chance = $attack->{chance} || 0;
+        if (int(rand(100)) + 1 <= $chance) {
+            my $status_type = $attack->{type};
+            if ($target->apply_status_effect($status_type)) {
+                print $target->{name} . " は " . $status_type . " 状態になった！\n";
+                return 1;
+            }
+        }
+    }
+    
+    return 0;
 }
 
 1;

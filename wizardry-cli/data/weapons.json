@@ -1,0 +1,110 @@
+{
+  "短剣": {
+    "type": "weapon",
+    "damage": "1d4",
+    "hit_bonus": 1,
+    "price": 10,
+    "weight": 1,
+    "required_class": ["盗賊", "魔法使い", "僧侶"],
+    "special": null
+  },
+  "ロングソード": {
+    "type": "weapon",
+    "damage": "1d8",
+    "hit_bonus": 0,
+    "price": 50,
+    "weight": 3,
+    "required_class": ["戦士", "侍"],
+    "special": null
+  },
+  "村正": {
+    "type": "weapon",
+    "damage": "2d8",
+    "hit_bonus": 3,
+    "price": 10000,
+    "weight": 2,
+    "required_class": ["侍"],
+    "special": "critical_chance_+20%"
+  },
+  "こん棒": {
+    "type": "weapon",
+    "damage": "1d6",
+    "hit_bonus": -1,
+    "price": 5,
+    "weight": 2,
+    "required_class": ["戦士", "僧侶", "盗賊"],
+    "special": null
+  },
+  "ハンマー": {
+    "type": "weapon",
+    "damage": "1d8+1",
+    "hit_bonus": -1,
+    "price": 30,
+    "weight": 4,
+    "required_class": ["戦士", "僧侶"],
+    "special": null
+  },
+  "ボウ": {
+    "type": "weapon",
+    "damage": "1d6",
+    "hit_bonus": 1,
+    "price": 25,
+    "weight": 2,
+    "required_class": ["戦士", "盗賊", "忍者"],
+    "special": "ranged"
+  },
+  "魔法の杖": {
+    "type": "weapon",
+    "damage": "1d4",
+    "hit_bonus": 0,
+    "price": 100,
+    "weight": 1,
+    "required_class": ["魔法使い"],
+    "special": "mp_bonus_+2"
+  },
+  "聖なる槌": {
+    "type": "weapon",
+    "damage": "1d8",
+    "hit_bonus": 1,
+    "price": 200,
+    "weight": 3,
+    "required_class": ["僧侶"],
+    "special": "undead_damage_x2"
+  },
+  "忍者刀": {
+    "type": "weapon",
+    "damage": "1d6+1",
+    "hit_bonus": 2,
+    "price": 80,
+    "weight": 2,
+    "required_class": ["忍者"],
+    "special": "critical_chance_+10%"
+  },
+  "盗賊の短剣": {
+    "type": "weapon",
+    "damage": "1d4+1",
+    "hit_bonus": 2,
+    "price": 40,
+    "weight": 1,
+    "required_class": ["盗賊"],
+    "special": "backstab_damage_x3"
+  },
+  "エクスカリバー": {
+    "type": "weapon",
+    "damage": "3d8+3",
+    "hit_bonus": 5,
+    "price": 50000,
+    "weight": 3,
+    "required_class": ["戦士", "侍"],
+    "special": "holy_damage"
+  },
+  "フレイムソード": {
+    "type": "weapon",
+    "damage": "2d6+2",
+    "hit_bonus": 2,
+    "price": 1000,
+    "weight": 3,
+    "required_class": ["戦士", "侍"],
+    "special": "fire_damage"
+  }
+}

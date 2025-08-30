@@ -1,0 +1,184 @@
+{
+  "ハリト": {
+    "level": 1,
+    "type": "mage",
+    "mp_cost": 2,
+    "target": "single_enemy",
+    "effect": "damage",
+    "power": "1d8",
+    "element": "fire",
+    "description": "火球を放つ"
+  },
+  "カティノ": {
+    "level": 1,
+    "type": "mage",
+    "mp_cost": 3,
+    "target": "group_enemy",
+    "effect": "status",
+    "status": "sleep",
+    "success_rate": 60,
+    "description": "敵グループを眠らせる"
+  },
+  "ディオス": {
+    "level": 1,
+    "type": "priest",
+    "mp_cost": 2,
+    "target": "single_ally",
+    "effect": "heal",
+    "power": "1d8",
+    "description": "HPを回復"
+  },
+  "バディオス": {
+    "level": 2,
+    "type": "priest",
+    "mp_cost": 4,
+    "target": "single_ally",
+    "effect": "heal",
+    "power": "2d8",
+    "description": "HPを大きく回復"
+  },
+  "モルト": {
+    "level": 2,
+    "type": "mage",
+    "mp_cost": 4,
+    "target": "single_enemy",
+    "effect": "damage",
+    "power": "2d6",
+    "element": "cold",
+    "description": "冷気で攻撃"
+  },
+  "カルト": {
+    "level": 3,
+    "type": "priest",
+    "mp_cost": 6,
+    "target": "single_ally",
+    "effect": "cure_status",
+    "status": ["poison", "paralysis"],
+    "description": "毒と麻痺を治療"
+  },
+  "ダルト": {
+    "level": 3,
+    "type": "mage",
+    "mp_cost": 5,
+    "target": "single_enemy",
+    "effect": "damage",
+    "power": "3d6",
+    "element": "lightning",
+    "description": "雷撃で攻撃"
+  },
+  "ラトゥマピック": {
+    "level": 4,
+    "type": "mage",
+    "mp_cost": 8,
+    "target": "group_enemy",
+    "effect": "damage",
+    "power": "3d8",
+    "element": "fire",
+    "description": "火炎で全体攻撃"
+  },
+  "ディアルコ": {
+    "level": 4,
+    "type": "priest",
+    "mp_cost": 10,
+    "target": "group_ally",
+    "effect": "heal",
+    "power": "2d8",
+    "description": "全体のHPを回復"
+  },
+  "ディアル": {
+    "level": 5,
+    "type": "priest",
+    "mp_cost": 8,
+    "target": "single_ally",
+    "effect": "heal",
+    "power": "3d8+3",
+    "description": "HPを大幅に回復"
+  },
+  "バディアル": {
+    "level": 5,
+    "type": "priest",
+    "mp_cost": 12,
+    "target": "single_ally",
+    "effect": "heal",
+    "power": "4d8+4",
+    "description": "HPを完全回復に近く回復"
+  },
+  "マディ": {
+    "level": 6,
+    "type": "priest",
+    "mp_cost": 20,
+    "target": "single_ally",
+    "effect": "resurrect",
+    "success_rate": 75,
+    "description": "死者を蘇生"
+  },
+  "ロルト": {
+    "level": 6,
+    "type": "mage",
+    "mp_cost": 15,
+    "target": "single_enemy",
+    "effect": "damage",
+    "power": "6d6",
+    "element": "lightning",
+    "description": "強力な雷撃"
+  },
+  "マバディ": {
+    "level": 7,
+    "type": "priest",
+    "mp_cost": 30,
+    "target": "group_ally",
+    "effect": "resurrect",
+    "success_rate": 50,
+    "description": "全体を蘇生"
+  },
+  "カドルト": {
+    "level": 7,
+    "type": "mage",
+    "mp_cost": 25,
+    "target": "all_enemy",
+    "effect": "damage",
+    "power": "8d8",
+    "element": "nuclear",
+    "description": "全ての敵を核の炎で焼く"
+  },
+  "モンテイト": {
+    "level": 2,
+    "type": "mage",
+    "mp_cost": 4,
+    "target": "single_enemy",
+    "effect": "status",
+    "status": "paralysis",
+    "success_rate": 70,
+    "description": "敵を麻痺させる"
+  },
+  "ポイズン": {
+    "level": 1,
+    "type": "mage",
+    "mp_cost": 3,
+    "target": "single_enemy",
+    "effect": "status",
+    "status": "poison",
+    "success_rate": 80,
+    "description": "敵を毒状態にする"
+  },
+  "シーレンス": {
+    "level": 3,
+    "type": "mage",
+    "mp_cost": 5,
+    "target": "single_enemy",
+    "effect": "status",
+    "status": "silence",
+    "success_rate": 65,
+    "description": "敵を沈黙状態にする"
+  },
+  "ストーン": {
+    "level": 5,
+    "type": "mage",
+    "mp_cost": 12,
+    "target": "single_enemy",
+    "effect": "status",
+    "status": "stone",
+    "success_rate": 40,
+    "description": "敵を石化させる"
+  }
+}

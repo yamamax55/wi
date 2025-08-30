@@ -2,6 +2,11 @@ package Character;
 use strict;
 use warnings;
 use utf8;
+use lib 'lib';
+use StatusEffect;
+use Spell;
+use Item;
+use Equipment;
 
 sub new {
     my ($class, %args) = @_;
@@ -31,14 +36,21 @@ sub new {
             accessory => undef,
         },
         inventory => [],
-        status => 'normal',  # normal, poison, paralyzed, stone, sleep, silence, dead
+        status_effects => [],  # StatusEffect objects
         alignment => 'neutral',  # good, neutral, evil
         position => 'front',  # front, back
         spell_points => {},  # 魔法レベル別の残り使用回数
-        spells => {}  # 習得魔法
+        known_spells => [],  # 習得魔法名の配列
+        equipment_manager => undef,  # Equipment object
+        ac => 10,  # アーマークラス
+        max_inventory => 20,  # 最大所持アイテム数
+        equipment_bonuses => {}  # 装備ボーナス
     };
     
     $self = _calculate_initial_stats($self, $args{race}, $args{class});
+    
+    # Equipment manager initialization
+    $self->{equipment_manager} = Equipment->new($self);
     
     bless $self, $class;
     return $self;
@@ -103,6 +115,10 @@ sub _calculate_initial_stats {
             for my $level (1..7) {
                 $self->{spell_points}{$level} = int($self->{max_mp} / $level) || 0;
             }
+            
+            # 初期魔法習得
+            my @initial_spells = Spell->get_initial_spells_for_character($class, $self->{stats}{INT}, $self->{stats}{PIE});
+            $self->{known_spells} = \@initial_spells;
         }
     }
     
@@ -241,12 +257,31 @@ sub display_status {
     print "レベル: " . $self->{level} . " / 経験値: " . $self->{exp} . "\n";
     print "HP: " . $self->{hp} . "/" . $self->{max_hp} . " / MP: " . $self->{mp} . "/" . $self->{max_mp} . "\n";
     print "\n";
-    print "STR: " . sprintf("%2d", $self->{str}) . " / INT: " . sprintf("%2d", $self->{int}) . " / PIE: " . sprintf("%2d", $self->{pie}) . "\n";
-    print "VIT: " . sprintf("%2d", $self->{vit}) . " / AGI: " . sprintf("%2d", $self->{agi}) . " / LUC: " . sprintf("%2d", $self->{luc}) . "\n";
+    print "STR: " . sprintf("%2d", $self->{stats}->{STR}) . " / INT: " . sprintf("%2d", $self->{stats}->{INT}) . " / PIE: " . sprintf("%2d", $self->{stats}->{PIE}) . "\n";
+    print "VIT: " . sprintf("%2d", $self->{stats}->{VIT}) . " / AGI: " . sprintf("%2d", $self->{stats}->{AGI}) . " / LUC: " . sprintf("%2d", $self->{stats}->{LUC}) . "\n";
     print "AC: " . $self->{ac} . "\n";
     
-    if (@{$self->{spells}}) {
-        print "\n習得魔法: " . join(", ", @{$self->{spells}}) . "\n";
+    if (@{$self->{known_spells}}) {
+        print "\n習得魔法: " . join(", ", @{$self->{known_spells}}) . "\n";
+    }
+    
+    if (@{$self->{status_effects}}) {
+        print "\n状態異常: ";
+        my @status_names = map { $_->get_name() } @{$self->{status_effects}};
+        print join(", ", @status_names) . "\n";
+    }
+    
+    # 装備表示
+    $self->{equipment_manager}->display_equipment();
+    
+    # インベントリ表示
+    if (@{$self->{inventory}}) {
+        print "\n=== インベントリ ===\n";
+        for my $item (@{$self->{inventory}}) {
+            print $item->get_name();
+            print " x" . $item->get_quantity() if $item->get_quantity() > 1;
+            print "\n";
+        }
     }
     print "\n";
 }
@@ -255,6 +290,17 @@ sub take_damage {
     my ($self, $damage) = @_;
     $self->{hp} -= $damage;
     $self->{hp} = 0 if $self->{hp} < 0;
+    
+    # 睡眠状態の場合はダメージで起きる
+    if ($self->has_status('sleep')) {
+        for my $effect (@{$self->{status_effects}}) {
+            if ($effect->{type} eq 'sleep' && $effect->should_wake_on_damage()) {
+                $self->remove_status_effect('sleep');
+                last;
+            }
+        }
+    }
+    
     return $self->{hp} <= 0;
 }
 
@@ -289,7 +335,323 @@ sub gain_exp {
         
         $self->{hp} += $hp_gain;
         $self->{mp} += $mp_gain;
+        
+        # 新しい魔法を習得できるかチェック
+        $self->check_new_spells();
     }
+}
+
+sub apply_status_effect {
+    my ($self, $effect_type, $duration) = @_;
+    
+    return 0 unless StatusEffect->is_valid_type($effect_type);
+    
+    # 既に同じ状態異常がある場合は持続時間を更新
+    for my $effect (@{$self->{status_effects}}) {
+        if ($effect->{type} eq $effect_type) {
+            $effect->reset_duration($duration);
+            return 1;
+        }
+    }
+    
+    # 新しい状態異常を追加
+    my $effect = StatusEffect->new($effect_type, $duration);
+    push @{$self->{status_effects}}, $effect if $effect;
+    
+    return 1;
+}
+
+sub remove_status_effect {
+    my ($self, $effect_type) = @_;    
+    
+    @{$self->{status_effects}} = grep { $_->{type} ne $effect_type } @{$self->{status_effects}};
+}
+
+sub remove_all_status_effects {
+    my $self = shift;
+    $self->{status_effects} = [];
+}
+
+sub has_status {
+    my ($self, $effect_type) = @_;
+    
+    for my $effect (@{$self->{status_effects}}) {
+        return 1 if $effect->{type} eq $effect_type;
+    }
+    
+    return 0;
+}
+
+sub can_act {
+    my $self = shift;
+    
+    return 0 unless $self->is_alive();
+    
+    for my $effect (@{$self->{status_effects}}) {
+        return 0 unless $effect->can_act();
+    }
+    
+    return 1;
+}
+
+sub can_cast_magic {
+    my $self = shift;
+    
+    for my $effect (@{$self->{status_effects}}) {
+        return 0 unless $effect->can_cast_magic();
+    }
+    
+    return 1;
+}
+
+sub process_status_effects {
+    my $self = shift;
+    my @messages = ();
+    
+    my @active_effects = @{$self->{status_effects}};
+    $self->{status_effects} = [];
+    
+    for my $effect (@active_effects) {
+        # ダメージ効果の処理
+        my $message = $effect->apply_effect($self);
+        push @messages, $message if $message;
+        
+        # 持続時間の減少
+        unless ($effect->tick()) {
+            push @{$self->{status_effects}}, $effect;
+        }
+    }
+    
+    return @messages;
+}
+
+sub learn_spell {
+    my ($self, $spell_name) = @_;
+    
+    return 0 unless Spell->spell_exists($spell_name);
+    
+    my $spell = Spell->new($spell_name);
+    return 0 unless $spell->can_be_learned_by($self->{class});
+    
+    # 既に習得済みかチェック
+    for my $known (@{$self->{known_spells}}) {
+        return 0 if $known eq $spell_name;
+    }
+    
+    push @{$self->{known_spells}}, $spell_name;
+    return 1;
+}
+
+sub can_cast_spell {
+    my ($self, $spell_name) = @_;
+    
+    return 0 unless $self->can_cast_magic();
+    
+    # 魔法を知っているかチェック
+    my $knows_spell = 0;
+    for my $known (@{$self->{known_spells}}) {
+        if ($known eq $spell_name) {
+            $knows_spell = 1;
+            last;
+        }
+    }
+    return 0 unless $knows_spell;
+    
+    my $spell = Spell->new($spell_name);
+    return 0 unless $spell;
+    
+    # MPをチェック
+    return $self->{mp} >= $spell->get_mp_cost();
+}
+
+sub cast_spell {
+    my ($self, $spell_name, $targets) = @_;
+    
+    return "魔法を使用できません。" unless $self->can_cast_spell($spell_name);
+    
+    my $spell = Spell->new($spell_name);
+    $self->{mp} -= $spell->get_mp_cost();
+    
+    my @results = ();
+    
+    if ($spell->is_damage_spell()) {
+        for my $target (@$targets) {
+            my $damage = $spell->calculate_damage($self->{level}, $self->get_effective_stat('INT'));
+            $target->take_damage($damage);
+            push @results, "$target->{name} に ${damage} のダメージ！";
+        }
+    } elsif ($spell->is_healing_spell()) {
+        for my $target (@$targets) {
+            my $healing = $spell->calculate_healing($self->{level}, $self->get_effective_stat('PIE'));
+            $target->heal($healing);
+            push @results, "$target->{name} のHPが ${healing} 回復！";
+        }
+    } elsif ($spell->is_status_spell()) {
+        for my $target (@$targets) {
+            if ($spell->roll_success($target->{level})) {
+                $target->apply_status_effect($spell->get_status());
+                push @results, "$target->{name} は " . $spell->get_status() . " 状態になった！";
+            } else {
+                push @results, "$target->{name} は魔法に抵抗した！";
+            }
+        }
+    }
+    
+    return @results;
+}
+
+sub add_to_inventory {
+    my ($self, $item) = @_;
+    
+    return 0 if @{$self->{inventory}} >= $self->{max_inventory};
+    
+    # 既に同じアイテムがある場合は数量を増やす
+    for my $inv_item (@{$self->{inventory}}) {
+        if ($inv_item->get_name() eq $item->get_name()) {
+            $inv_item->add_quantity($item->get_quantity());
+            return 1;
+        }
+    }
+    
+    # 新しいアイテムとして追加
+    push @{$self->{inventory}}, $item;
+    return 1;
+}
+
+sub remove_from_inventory {
+    my ($self, $item_name, $quantity) = @_;
+    $quantity ||= 1;
+    
+    for my $i (0..$#{$self->{inventory}}) {
+        my $item = $self->{inventory}[$i];
+        if ($item->get_name() eq $item_name) {
+            if ($item->get_quantity() <= $quantity) {
+                splice @{$self->{inventory}}, $i, 1;
+            } else {
+                $item->remove_quantity($quantity);
+            }
+            return 1;
+        }
+    }
+    
+    return 0;
+}
+
+sub can_add_to_inventory {
+    my ($self, $item) = @_;
+    
+    return 1 if @{$self->{inventory}} < $self->{max_inventory};
+    
+    # 同じアイテムがある場合はスタック可能
+    for my $inv_item (@{$self->{inventory}}) {
+        return 1 if $inv_item->get_name() eq $item->get_name();
+    }
+    
+    return 0;
+}
+
+sub get_inventory_item {
+    my ($self, $item_name) = @_;
+    
+    for my $item (@{$self->{inventory}}) {
+        return $item if $item->get_name() eq $item_name;
+    }
+    
+    return undef;
+}
+
+sub use_item {
+    my ($self, $item_name) = @_;
+    
+    my $item = $self->get_inventory_item($item_name);
+    return "そのアイテムを持っていません。" unless $item;
+    return "そのアイテムは使用できません。" unless $item->is_consumable();
+    
+    my $result = $item->use_item($self);
+    
+    # アイテムを使い切った場合は削除
+    if ($item->get_quantity() <= 0) {
+        $self->remove_from_inventory($item_name);
+    }
+    
+    return $result;
+}
+
+sub equip_item {
+    my ($self, $item_name) = @_;
+    
+    my $item = $self->get_inventory_item($item_name);
+    return "そのアイテムを持っていません。" unless $item;
+    
+    return $self->{equipment_manager}->equip_item($item);
+}
+
+sub unequip_item {
+    my ($self, $slot) = @_;
+    return $self->{equipment_manager}->unequip_item($slot);
+}
+
+sub get_effective_stat {
+    my ($self, $stat) = @_;
+    
+    my $base_stat = $self->{stats}->{$stat} || 0;
+    my $bonus = $self->{equipment_bonuses}->{$stat} || 0;
+    
+    return $base_stat + $bonus;
+}
+
+sub check_new_spells {
+    my $self = shift;
+    
+    my $spell_type = ($self->{class} eq '魔法使い' || $self->{class} eq '忍者') ? 'mage' : 'priest';
+    return unless $spell_type;
+    
+    my @available_spells = Spell->get_spells_by_level_and_type($self->{level}, $spell_type);
+    
+    for my $spell_name (@available_spells) {
+        my $already_known = 0;
+        for my $known (@{$self->{known_spells}}) {
+            if ($known eq $spell_name) {
+                $already_known = 1;
+                last;
+            }
+        }
+        
+        unless ($already_known) {
+            if ($self->learn_spell($spell_name)) {
+                print $self->{name} . " は新しい魔法 『" . $spell_name . "』 を習得した！\n";
+            }
+        }
+    }
+}
+
+sub display_inventory {
+    my $self = shift;
+    
+    print "\n=== インベントリ (" . @{$self->{inventory}} . "/" . $self->{max_inventory} . ") ===\n";
+    
+    if (@{$self->{inventory}}) {
+        for my $i (0..$#{$self->{inventory}}) {
+            my $item = $self->{inventory}[$i];
+            print ($i + 1) . ". " . $item->get_name();
+            print " x" . $item->get_quantity() if $item->get_quantity() > 1;
+            print " (" . $item->get_description() . ")" if $item->get_description();
+            print "\n";
+        }
+    } else {
+        print "アイテムを持っていません。\n";
+    }
+}
+
+sub get_total_inventory_weight {
+    my $self = shift;
+    
+    my $total_weight = 0;
+    for my $item (@{$self->{inventory}}) {
+        $total_weight += $item->get_total_weight();
+    }
+    
+    return $total_weight;
 }
 
 1;

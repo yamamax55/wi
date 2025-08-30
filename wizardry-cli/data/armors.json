@@ -1,0 +1,138 @@
+{
+  "革の鎧": {
+    "type": "armor",
+    "ac_bonus": 2,
+    "price": 20,
+    "weight": 5,
+    "required_class": ["戦士", "僧侶", "盗賊", "忍者"],
+    "special": null
+  },
+  "チェインメイル": {
+    "type": "armor",
+    "ac_bonus": 4,
+    "price": 100,
+    "weight": 15,
+    "required_class": ["戦士", "僧侶", "侍"],
+    "special": null
+  },
+  "プレートメイル": {
+    "type": "armor",
+    "ac_bonus": 6,
+    "price": 500,
+    "weight": 25,
+    "required_class": ["戦士", "侍"],
+    "special": null
+  },
+  "ローブ": {
+    "type": "armor",
+    "ac_bonus": 1,
+    "price": 15,
+    "weight": 2,
+    "required_class": ["魔法使い", "僧侶"],
+    "special": "magic_resistance_+10%"
+  },
+  "忍び装束": {
+    "type": "armor",
+    "ac_bonus": 3,
+    "price": 80,
+    "weight": 3,
+    "required_class": ["忍者"],
+    "special": "stealth_bonus"
+  },
+  "盗賊服": {
+    "type": "armor",
+    "ac_bonus": 2,
+    "price": 50,
+    "weight": 4,
+    "required_class": ["盗賊"],
+    "special": "lockpick_bonus"
+  },
+  "ドラゴンスケイル": {
+    "type": "armor",
+    "ac_bonus": 8,
+    "price": 5000,
+    "weight": 20,
+    "required_class": ["戦士", "侍"],
+    "special": "fire_resistance_50%"
+  },
+  "ミスリルの鎧": {
+    "type": "armor",
+    "ac_bonus": 7,
+    "price": 10000,
+    "weight": 8,
+    "required_class": ["戦士", "僧侶", "侍"],
+    "special": "magic_resistance_25%"
+  },
+  "バックラー": {
+    "type": "shield",
+    "ac_bonus": 1,
+    "price": 10,
+    "weight": 2,
+    "required_class": ["戦士", "僧侶", "盗賊", "侍"],
+    "special": null
+  },
+  "ラージシールド": {
+    "type": "shield",
+    "ac_bonus": 3,
+    "price": 50,
+    "weight": 8,
+    "required_class": ["戦士", "僧侶", "侍"],
+    "special": null
+  },
+  "タワーシールド": {
+    "type": "shield",
+    "ac_bonus": 4,
+    "price": 200,
+    "weight": 15,
+    "required_class": ["戦士"],
+    "special": "arrow_block_+50%"
+  },
+  "革の帽子": {
+    "type": "helmet",
+    "ac_bonus": 1,
+    "price": 5,
+    "weight": 1,
+    "required_class": ["戦士", "僧侶", "盗賊", "忍者", "侍"],
+    "special": null
+  },
+  "鉄兜": {
+    "type": "helmet",
+    "ac_bonus": 2,
+    "price": 30,
+    "weight": 3,
+    "required_class": ["戦士", "侍"],
+    "special": null
+  },
+  "魔法の帽子": {
+    "type": "helmet",
+    "ac_bonus": 1,
+    "price": 100,
+    "weight": 1,
+    "required_class": ["魔法使い"],
+    "special": "mp_bonus_+5"
+  },
+  "幸運のお守り": {
+    "type": "accessory",
+    "ac_bonus": 0,
+    "price": 200,
+    "weight": 0,
+    "required_class": [],
+    "special": "luck_bonus_+3"
+  },
+  "力の指輪": {
+    "type": "accessory",
+    "ac_bonus": 0,
+    "price": 500,
+    "weight": 0,
+    "required_class": [],
+    "special": "str_bonus_+2"
+  },
+  "知恵の指輪": {
+    "type": "accessory",
+    "ac_bonus": 0,
+    "price": 500,
+    "weight": 0,
+    "required_class": [],
+    "special": "int_bonus_+2"
+  }
+}
